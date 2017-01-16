@@ -6,6 +6,15 @@ final class TriangleApp {
   private let window: OpaquePointer //can this be destroyed?
   private let validationLayers = ValidationLayers()
 
+  //these need to be deallocated with the vulkan api?
+  private var instance: VkInstance? 
+  private var callback: VkDebugReportCallbackEXT?
+  private var device: VkDevice?
+  //-------------------------------------------------
+  private var physicalDevice: PhysicalDevice?
+  private var logicalDevice: LogicalDevice?
+  private var graphicsQueue: VkQueue?
+
   init() {
     glfwInit()
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API)
@@ -20,6 +29,15 @@ final class TriangleApp {
 
   private func initVulkan() {
     createInstance()
+    #if DEBUG
+    setupDebugCallback()
+    #endif
+    physicalDevice = PhysicalDevice(instance: instance!)
+    logicalDevice = LogicalDevice(instance: instance!, physicalDevice: physicalDevice!, validationLayers: validationLayers)
+
+    //tmp
+    //let indices = QueueFamilyFinder.findQueueFamilies(physicalDevice: physicalDevice!.vkDevice)
+    //vkGetDeviceQueue(device, UInt32(indices.graphicsFamily), 0, &graphicsQueue)
   }
 
   private func createInstance() {
@@ -30,30 +48,21 @@ final class TriangleApp {
     }
     #endif
 
-    var appInfo = VkApplicationInfo()
-    appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO
-    appInfo.pApplicationName = "Triangles".cStringCopy
-    appInfo.applicationVersion = Version.make(major: 1, minor: 0, patch: 0)
-    appInfo.pEngineName = "No Engine".cStringCopy
-    appInfo.engineVersion = Version.make(major: 1, minor: 0, patch: 0)
-    appInfo.apiVersion = Version.apiVersion
+    let appInfoBuilder = ApplicationInfoBuilder(applicationName: "Triangle", engineName: "No Name")
+    var appInfo = appInfoBuilder.build()
 
     let createInfoBuilder = InstanceCreateInfoBuilder()
     createInfoBuilder.applicationInfo = withUnsafePointer(to: &appInfo) { return $0 }
 
-    var glfwExtensionCount: UInt32 = 0
-    guard let glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount) else {
-      fatalError("Cannot get glfw extensions.")
-    }
-    createInfoBuilder.enabledExtensionCount = glfwExtensionCount
-    createInfoBuilder.enabledExtensionNames = UnsafePointer(glfwExtensions)
+    let glfwExtensions = getRequiredExtensions()
+    createInfoBuilder.enabledExtensionCount = UInt32(glfwExtensions.count)
+    createInfoBuilder.enabledExtensionNames = glfwExtensions
 
     #if DEBUG
     createInfoBuilder.enabledLayerCount = validationLayers.count
     createInfoBuilder.enabledLayerNames = validationLayers.layerNames
     #endif
 
-    var instance: VkInstance? //these need to be deallocated with the vulkan api?
     var createInfo = createInfoBuilder.build()
     let result = vkCreateInstance(&createInfo, nil, &instance)
     if result != VK_SUCCESS { 
@@ -72,6 +81,54 @@ final class TriangleApp {
       print(String.make(from: p.extensionName))
     }
   }
+
+  private func getRequiredExtensions() -> [UnsafePointer<Int8>?] {
+    var glfwExtensionCount: UInt32 = 0
+    guard let glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount) else {
+      fatalError("Cannot get glfw extensions.")
+    }
+
+    var retExtensions = [UnsafePointer<CChar>?]()
+    for i in 0..<glfwExtensionCount {
+      retExtensions.append(glfwExtensions[Int(i)])
+    }
+
+    #if DEBUG
+    retExtensions.append(VK_EXT_DEBUG_REPORT_EXTENSION_NAME.cStringCopy)
+    #endif
+
+    //deallocate glfwExtensions?
+    return retExtensions
+  }
+
+  private func setupDebugCallback() {
+    var createInfo = VkDebugReportCallbackCreateInfoEXT()
+    createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT
+    createInfo.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT.rawValue | VK_DEBUG_REPORT_WARNING_BIT_EXT.rawValue
+    createInfo.pfnCallback = { (a, b, c, e, code, layerPrefix, msg, i) -> UInt32 in
+      //func debugCallback(t: (UInt32, VkDebugReportObjectTypeEXT, UInt64, Int, Int32, Optional<UnsafePointer<Int8>>, Optional<UnsafePointer<Int8>>, Optional<UnsafeMutableRawPointer>)) -> UInt32 
+      if let ptr = msg {
+        print("Validation layer: \(String(cString: ptr))") 
+      }
+      return UInt32(VK_FALSE)
+    }
+    
+    if CreateDebugReportCallbackEXT(instance, &createInfo, nil, &callback) != VK_SUCCESS {
+      fatalError("Failed to create debug callback.")
+    }
+  }
+
+//how to query information about the gpu 
+//  func isDeviceSuitable(device: VkPhysicalDevice) -> Bool {
+//    var deviceProperties = VkPhysicalDeviceProperties()
+//    vkGetPhysicalDeviceProperties(device, &deviceProperties)
+//
+//    var deviceFeatures = VkPhysicalDeviceFeatures()
+//    vkGetPhysicalDeviceFeatures(device, &deviceFeatures)
+//
+//    print(deviceProperties, deviceFeatures)
+//    return true
+//  }
 
   private func mainLoop() {
     while glfwWindowShouldClose(window) == 0 {

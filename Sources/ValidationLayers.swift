@@ -8,7 +8,7 @@ struct ValidationLayers {
   }
 
   var layerNames: [UnsafePointer<Int8>?] {
-    return layers.flatMap { $0.withCString { return $0 } }
+    return layers.cArray
   }
 
   //is there a constant for this somewhere?

@@ -1,5 +1,6 @@
-import CVulkan
 import CGLFW3
+import CVulkan
+import Foundation
 
 final class TriangleApp {
   private let window: OpaquePointer //can this be destroyed?
@@ -31,9 +32,9 @@ final class TriangleApp {
 
     var appInfo = VkApplicationInfo()
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO
-    appInfo.pApplicationName = "Triangles".withCString { return $0 }
+    appInfo.pApplicationName = "Triangles".cStringCopy
     appInfo.applicationVersion = Version.make(major: 1, minor: 0, patch: 0)
-    appInfo.pEngineName = "No Engine".withCString { return $0 }
+    appInfo.pEngineName = "No Engine".cStringCopy
     appInfo.engineVersion = Version.make(major: 1, minor: 0, patch: 0)
     appInfo.apiVersion = Version.apiVersion
 
@@ -44,24 +45,16 @@ final class TriangleApp {
     guard let glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount) else {
       fatalError("Cannot get glfw extensions.")
     }
-//    createInfoBuilder.enabledExtensionCount = glfwExtensionCount
-//    createInfoBuilder.enabledExtensionNames = UnsafePointer(glfwExtensions)
-//
-//    #if DEBUG
-//    createInfoBuilder.enabledLayerCount = validationLayers.count
-//    createInfoBuilder.enabledLayerNames = validationLayers.layerNames
-//    #endif
-var createInfo = VkInstanceCreateInfo(sType: VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
-                                pNext: nil,
-                                flags: 0,
-                                pApplicationInfo: withUnsafePointer(to: &appInfo) { return $0 },
-                                enabledLayerCount: validationLayers.count,
-                                ppEnabledLayerNames: ["VK_LAYER_LUNARG_standard_validation"].flatMap { $0.withCString { return $0}},
-                                enabledExtensionCount: glfwExtensionCount,
-                                ppEnabledExtensionNames: UnsafePointer(glfwExtensions))
+    createInfoBuilder.enabledExtensionCount = glfwExtensionCount
+    createInfoBuilder.enabledExtensionNames = UnsafePointer(glfwExtensions)
+
+    #if DEBUG
+    createInfoBuilder.enabledLayerCount = validationLayers.count
+    createInfoBuilder.enabledLayerNames = validationLayers.layerNames
+    #endif
 
     var instance: VkInstance? //these need to be deallocated with the vulkan api?
-//    var createInfo = createInfoBuilder.build()
+    var createInfo = createInfoBuilder.build()
     let result = vkCreateInstance(&createInfo, nil, &instance)
     if result != VK_SUCCESS { 
       fatalError("Failed to create instance. \(result)")

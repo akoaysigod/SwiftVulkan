@@ -14,6 +14,7 @@ final class TriangleApp {
   private var physicalDevice: PhysicalDevice?
   private var logicalDevice: LogicalDevice?
   private var graphicsQueue: VkQueue?
+  private var surface: VkSurfaceKHR?
 
   init() {
     glfwInit()
@@ -32,8 +33,11 @@ final class TriangleApp {
     #if DEBUG
     setupDebugCallback()
     #endif
-    physicalDevice = PhysicalDevice(instance: instance!)
-    logicalDevice = LogicalDevice(instance: instance!, physicalDevice: physicalDevice!, validationLayers: validationLayers)
+    createSurface()
+
+    physicalDevice = PhysicalDevice(instance: instance!, surface: surface!)
+    logicalDevice = LogicalDevice(instance: instance!, physicalDevice: physicalDevice!, validationLayers: validationLayers, queueFamilyIndices: physicalDevice!.queueFamilyIndices)
+
 
     //tmp
     //let indices = QueueFamilyFinder.findQueueFamilies(physicalDevice: physicalDevice!.vkDevice)
@@ -129,6 +133,12 @@ final class TriangleApp {
 //    print(deviceProperties, deviceFeatures)
 //    return true
 //  }
+
+  private func createSurface() {
+    if glfwCreateWindowSurface(instance, window, nil, &surface) != VK_SUCCESS {
+      fatalError("Failed to create window surface.")
+    }
+  }
 
   private func mainLoop() {
     while glfwWindowShouldClose(window) == 0 {

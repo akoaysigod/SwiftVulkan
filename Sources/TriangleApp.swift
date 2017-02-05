@@ -30,13 +30,13 @@ final class TriangleApp {
 
   private func initVulkan() {
     createInstance()
-    #if DEBUG
-    setupDebugCallback()
-    #endif
-    createSurface()
-
-    physicalDevice = PhysicalDevice(instance: instance!, surface: surface!)
-    logicalDevice = LogicalDevice(instance: instance!, physicalDevice: physicalDevice!, validationLayers: validationLayers, queueFamilyIndices: physicalDevice!.queueFamilyIndices)
+//    #if DEBUG
+//    setupDebugCallback()
+//    #endif
+//    createSurface()
+//
+//    physicalDevice = PhysicalDevice(instance: instance!, surface: surface!)
+//    logicalDevice = LogicalDevice(instance: instance!, physicalDevice: physicalDevice!, validationLayers: validationLayers, queueFamilyIndices: physicalDevice!.queueFamilyIndices)
 
 
     //tmp
@@ -58,13 +58,13 @@ final class TriangleApp {
     let createInfoBuilder = InstanceCreateInfoBuilder()
     createInfoBuilder.applicationInfo = withUnsafePointer(to: &appInfo) { return $0 }
 
-    let glfwExtensions = getRequiredExtensions()
-    createInfoBuilder.enabledExtensionCount = UInt32(glfwExtensions.count)
-    createInfoBuilder.enabledExtensionNames = glfwExtensions
+    let requiredExtensions = RequiredExtensions()
+    createInfoBuilder.enabledExtensionCount = requiredExtensions.count
+    createInfoBuilder.enabledExtensionNames = requiredExtensions.names
 
     #if DEBUG
     createInfoBuilder.enabledLayerCount = validationLayers.count
-    createInfoBuilder.enabledLayerNames = validationLayers.layerNames
+    createInfoBuilder.enabledLayerNames = validationLayers.names
     #endif
 
     var createInfo = createInfoBuilder.build()
@@ -72,37 +72,6 @@ final class TriangleApp {
     if result != VK_SUCCESS { 
       fatalError("Failed to create instance. \(result)")
     }
-  }
-
-  //gets the available extensions as strings
-  //probably can figure out how to use this to make sure glfwGetRequiredinstanceExtensions are satisfied
-  private func checkAvailableExtensions() {
-    var extensionCount: UInt32 = 0
-    vkEnumerateInstanceExtensionProperties(nil, &extensionCount, nil)
-    var extensionProperties = [VkExtensionProperties](repeating: VkExtensionProperties(), count: Int(extensionCount))
-    vkEnumerateInstanceExtensionProperties(nil, &extensionCount, &extensionProperties)
-    for p in extensionProperties {
-      print(String.make(from: p.extensionName))
-    }
-  }
-
-  private func getRequiredExtensions() -> [UnsafePointer<Int8>?] {
-    var glfwExtensionCount: UInt32 = 0
-    guard let glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount) else {
-      fatalError("Cannot get glfw extensions.")
-    }
-
-    var retExtensions = [UnsafePointer<CChar>?]()
-    for i in 0..<glfwExtensionCount {
-      retExtensions.append(glfwExtensions[Int(i)])
-    }
-
-    #if DEBUG
-    retExtensions.append(VK_EXT_DEBUG_REPORT_EXTENSION_NAME.cStringCopy)
-    #endif
-
-    //deallocate glfwExtensions?
-    return retExtensions
   }
 
   private func setupDebugCallback() {

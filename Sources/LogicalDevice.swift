@@ -32,7 +32,7 @@ final class LogicalDevice {
     createInfoBuilder.enabledFeatures = withUnsafePointer(to: &deviceFeatures) { return $0 }
     #if DEBUG
     createInfoBuilder.enabledLayerCount = validationLayers.count
-    createInfoBuilder.enabledLayerNames = validationLayers.layerNames
+    createInfoBuilder.enabledLayerNames = validationLayers.names
     #endif
 
     var createInfo = createInfoBuilder.build()

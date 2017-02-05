@@ -1,20 +1,23 @@
 import CVulkan
 
-struct ValidationLayers {
+final class ValidationLayers {
+  let count: UInt32 
+  let names: [UnsafePointer<Int8>?] 
   private let layers: [String]
-
-  var count: UInt32 {
-    return UInt32(layers.count)
-  }
-
-  var layerNames: [UnsafePointer<Int8>?] {
-    return layers.cArray
-  }
 
   //is there a constant for this somewhere?
   init(layers: [String] = ["VK_LAYER_LUNARG_standard_validation"]) {
     self.layers = layers
+    names = layers.cArray
+    count = UInt32(layers.count)
   }
+
+//  deinit {
+//    for name in names {
+//      name?.deinitialize(count: 1)
+//      name?.deallocate(capacity: 1)
+//    }
+//  }
 
   func checkSupport() -> Bool {
     var layerCount: UInt32 = 0

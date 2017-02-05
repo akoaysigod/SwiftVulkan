@@ -10,7 +10,6 @@ final class InstanceCreateInfoBuilder {
   var enabledLayerCount: UInt32 = 0 //not required
   var enabledLayerNames: [UnsafePointer<Int8>?]! //this get bridged automatically as a function call but not as a property being set
   var enabledExtensionCount: UInt32 = 0 //required I think
-  //var enabledExtensionNames: UnsafePointer<UnsafePointer<Int8>?>! 
   var enabledExtensionNames: [UnsafePointer<Int8>?]!
 
   func build() -> VkInstanceCreateInfo {
@@ -21,7 +20,7 @@ final class InstanceCreateInfoBuilder {
       pApplicationInfo: applicationInfo,
       enabledLayerCount: enabledLayerCount,
       ppEnabledLayerNames: enabledLayerNames,
-      enabledExtensionCount: enabledExtensionCount,
+      enabledExtensionCount: UInt32(enabledExtensionNames.count),
       ppEnabledExtensionNames: enabledExtensionNames
     )
   }

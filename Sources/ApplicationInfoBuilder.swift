@@ -21,6 +21,15 @@ final class ApplicationInfoBuilder {
   }
 
   func build() -> VkApplicationInfo {
+//    return VkApplicationInfo(
+//      sType: sType,
+//      pNext: nil,
+//      pApplicationName: "ok",
+//      applicationVersion: 1,
+//      pEngineName: "ok",
+//      engineVersion: 1,
+//      apiVersion: 1
+//    )
     var appInfo = VkApplicationInfo()
     appInfo.sType = sType
     appInfo.pApplicationName = applicationName?.cStringCopy

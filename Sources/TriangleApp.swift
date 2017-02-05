@@ -110,15 +110,17 @@ final class TriangleApp {
     createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT
     createInfo.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT.rawValue | VK_DEBUG_REPORT_WARNING_BIT_EXT.rawValue
     createInfo.pfnCallback = { (a, b, c, e, code, layerPrefix, msg, i) -> UInt32 in
-      //func debugCallback(t: (UInt32, VkDebugReportObjectTypeEXT, UInt64, Int, Int32, Optional<UnsafePointer<Int8>>, Optional<UnsafePointer<Int8>>, Optional<UnsafeMutableRawPointer>)) -> UInt32 
       if let ptr = msg {
         print("Validation layer: \(String(cString: ptr))") 
       }
       return UInt32(VK_FALSE)
     }
     
-    if CreateDebugReportCallbackEXT(instance, &createInfo, nil, &callback) != VK_SUCCESS {
-      fatalError("Failed to create debug callback.")
+    var voidFunc = vkGetInstanceProcAddr(instance, "vkCreateDebugReportCallbackEXT") 
+    _ = withUnsafePointer(to: &voidFunc) { (p) in
+      p.withMemoryRebound(to: PFN_vkCreateDebugReportCallbackEXT.self, capacity: 1) { (fn) in
+        fn.pointee(instance, &createInfo, nil, &callback)
+      }
     }
   }
 
